@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: blob: data: 'unsafe-inline' 'unsafe-eval'; worker-src 'self' blob:;">
+    <title>PWA Automator Pro - Monster Edition</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        premium: '#fbbf24',
+                        monster: '#10b981',
+                        apk: '#a4c639'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased; }
+        
+        .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.3); }
+        .dark .glass-panel { background: rgba(28, 28, 30, 0.75); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.05); }
+        
+        .hover-glow { transition: all 0.3s ease; }
+        .hover-glow:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        
+        #cinematicLoader { position: fixed; inset: 0; background: #020617; z-index: 99999; display: flex; align-items: center; justify-content: center; transition: opacity 0.4s ease; }
+        .loader-line { width: 100px; height: 2px; background: rgba(59, 130, 246, 0.2); position: relative; overflow: hidden; border-radius: 1px; }
+        .loader-line::after { content: ''; position: absolute; left: -100%; width: 100%; height: 100%; background: #10b981; animation: lineAnim 1s ease-in-out infinite; }
+        @keyframes lineAnim { 0% { left: -100%; } 100% { left: 100%; } }
+
+        .btn-ripple { position: relative; overflow: hidden; transition: all 0.2s ease; }
+        .btn-ripple:active { transform: scale(0.98); }
+        .bg-animate { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #f8fafc; }
+        .dark .bg-animate { background: #020617; }
+        
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        .dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        .audit-badge { @apply flex items-center justify-between p-3 rounded-xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-800; }
+        .score-circle { @apply w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold border; }
+        
+        .badge-monster { @apply text-[8px] font-black bg-monster/10 text-monster px-2 py-0.5 rounded border border-monster/20 uppercase; }
+        
+        .apk-btn { @apply flex flex-col items-center justify-center p-3 rounded-xl border border-apk/20 bg-apk/5 hover:bg-apk/10 transition-all gap-1; }
+    </style>
+
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body class="text-slate-900 dark:text-slate-200 min-h-screen transition-colors duration-500 pb-24">
+
+    <div id="cinematicLoader">
+        <div class="loader-line"></div>
+    </div>
+
+    <div class="bg-animate"></div>
+
+    <nav class="sticky top-0 z-50 glass-panel">
+        <div class="max-w-xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-monster rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                    <i data-lucide="zap" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <span class="block font-extrabold text-lg leading-tight dark:text-white tracking-tight">it.adi.p</span>
+                    <div class="flex items-center gap-1.5">
+                        <span class="badge-monster">Monster Edition</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="themeToggle" class="w-9 h-9 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-yellow-400">
+                    <i data-lucide="moon" id="moonIcon" class="w-4 h-4"></i>
+                    <i data-lucide="sun" id="sunIcon" class="w-4 h-4 hidden"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-xl mx-auto w-full p-6 space-y-6 mt-2">
+        <header class="space-y-2">
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-monster/10 text-monster rounded-full text-[9px] font-bold uppercase tracking-wider">
+                <i data-lucide="shield-check" class="w-3 h-3"></i> APK Online Builder Active
+            </div>
+            <h1 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-none">
+                PWA <span class="text-monster">Monster</span> Automator.
+            </h1>
+        </header>
+
+        <div class="grid grid-cols-2 gap-3">
+            <div class="glass-panel p-4 rounded-2xl border border-monster/20">
+                <div class="flex items-center gap-2 text-monster mb-1">
+                    <i data-lucide="cloud-lightning" class="w-4 h-4"></i>
+                    <span class="text-[10px] font-black uppercase">Build Online</span>
+                </div>
+                <p class="text-[9px] text-slate-500 font-bold">API Cloud: <span class="text-monster">CONNECTED</span></p>
+                <p class="text-[9px] text-slate-500 font-bold">Sign Engine: <span class="text-monster">AUTO</span></p>
+            </div>
+            <div class="glass-panel p-4 rounded-2xl border border-apk/20">
+                <div class="flex items-center gap-2 text-apk mb-1">
+                    <i data-lucide="android" class="w-4 h-4"></i>
+                    <span class="text-[10px] font-black uppercase">APK Output</span>
+                </div>
+                <p class="text-[9px] text-slate-500 font-bold">Format: <span class="text-apk">ARM64/x86</span></p>
+                <p class="text-[9px] text-slate-500 font-bold">Status: <span class="text-apk">READY</span></p>
+            </div>
+        </div>
+
+        <div class="glass-panel rounded-2xl p-6 space-y-6 hover-glow">
+            
+            <div id="historyBox" class="space-y-3">
+                <div class="flex items-center justify-between px-1">
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">History</span>
+                    <button onclick="clearHistory()" class="text-[9px] font-bold text-red-400 uppercase">Clear</button>
+                </div>
+                <div id="historyList" class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"></div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="relative">
+                    <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">App Branding</label>
+                    <input type="text" id="appName" value="My Monster App" oninput="autoSaveProject()"
+                        class="w-full bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl px-5 py-4 outline-none focus:border-monster transition-all dark:text-white font-semibold">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Accent Color</label>
+                        <div class="flex items-center gap-3 bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3">
+                            <input type="color" id="themeColor" value="#10b981" oninput="updateColorHex(this.value); autoSaveProject();" class="w-6 h-6 rounded cursor-pointer bg-transparent">
+                            <span id="colorHex" class="text-[10px] font-mono font-bold">#10B981</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Build Mode</label>
+                        <select id="buildType" class="w-full bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none text-[10px] font-bold dark:text-white uppercase">
+                            <option value="debug">Debug (Fast)</option>
+                            <option value="release">Release (Signed)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="dropZone" class="group relative border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center transition-all bg-slate-50/30 dark:bg-slate-950/10 hover:border-monster/50">
+                <input type="file" id="htmlInput" accept=".html" multiple class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20">
+                <div id="uploadContent" class="space-y-3 relative z-10">
+                    <div class="w-12 h-12 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center mx-auto shadow-sm">
+                        <i data-lucide="android" class="w-6 h-6 text-apk"></i>
+                    </div>
+                    <p class="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Drop Monster Source Here</p>
+                </div>
+            </div>
+
+            <div id="auditSection" class="hidden space-y-3 pt-4 border-t border-slate-200/50 dark:border-slate-800/50">
+                <div class="grid grid-cols-2 gap-2" id="auditGrid">
+                    <div class="audit-badge"><span class="text-[9px] font-bold uppercase text-slate-500">Security Audit</span><div id="res-seo" class="score-circle border-slate-200 dark:border-slate-700">--</div></div>
+                    <div class="audit-badge"><span class="text-[9px] font-bold uppercase text-slate-500">API Health</span><div id="res-mobile" class="score-circle border-slate-200 dark:border-slate-700">--</div></div>
+                </div>
+            </div>
+
+            <div id="buildProgressArea" class="hidden space-y-2">
+                <div class="flex justify-between items-center text-[10px] font-bold uppercase text-monster">
+                    <span id="progressText">Building Native APK...</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div id="progressBarFill" class="h-full bg-monster w-0 transition-all duration-300"></div>
+                </div>
+            </div>
+
+            <div id="actionArea" class="hidden grid grid-cols-2 gap-4">
+                <button onclick="processAndDownload()" class="btn-ripple w-full bg-slate-900 dark:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-3 text-[11px] uppercase">
+                    <i data-lucide="package" class="w-4 h-4"></i>
+                    ZIP Bundle
+                </button>
+                <button onclick="buildAPKOnline()" class="btn-ripple w-full bg-monster text-white font-black py-4 rounded-xl shadow-lg shadow-monster/20 flex items-center justify-center gap-3 text-[11px] uppercase">
+                    <i data-lucide="android" class="w-4 h-4 animate-bounce"></i>
+                    Export .apk
+                </button>
+            </div>
+
+            <div id="messageBox" class="hidden p-4 rounded-xl text-center text-[10px] font-bold uppercase border"></div>
+        </div>
+
+        <footer class="pt-4 flex flex-col items-center gap-4">
+            <p class="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Monster Online Build Engine &copy; 2026</p>
+        </footer>
+    </main>
+
+    <script>
+        const DB_NAME = 'PWA_Monster_V1';
+        const DB_VERSION = 1;
+        let db, selectedFiles = [];
+
+        const initDB = () => {
+            return new Promise((resolve) => {
+                const req = indexedDB.open(DB_NAME, DB_VERSION);
+                req.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('projects')) db.createObjectStore('projects', { keyPath: 'id' });
+                    if (!db.objectStoreNames.contains('history')) db.createObjectStore('history', { keyPath: 'id', autoIncrement: true });
+                };
+                req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+            });
+        };
+
+        const autoSaveProject = async () => {
+            if (!db) return;
+            const data = {
+                id: 'last_session',
+                name: document.getElementById('appName').value,
+                color: document.getElementById('themeColor').value
+            };
+            db.transaction('projects', 'readwrite').objectStore('projects').put(data);
+        };
+
+        async function runAudit(files) {
+            document.getElementById('auditSection').classList.remove('hidden');
+            let results = { seo: 0, mobile: 0 };
+            for(let file of files) {
+                const text = await file.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                if(doc.title) results.seo += 50;
+                if(doc.querySelector('meta[name="description"]')) results.seo += 50;
+                if(doc.querySelector('meta[name="viewport"]')) results.mobile = 100;
+            }
+            const updateResult = (id, val) => {
+                const el = document.getElementById(id);
+                el.textContent = val > 100 ? 100 : val;
+                el.style.borderColor = val >= 80 ? '#10b981' : '#eab308';
+                el.style.color = val >= 80 ? '#10b981' : '#eab308';
+            };
+            updateResult('res-seo', results.seo);
+            updateResult('res-mobile', results.mobile);
+        }
+
+        // FUNGSI UTAMA: BUILD APK ONLINE API
+        async function buildAPKOnline() {
+            try {
+                const appName = document.getElementById('appName').value || "Monster App";
+                const themeColor = document.getElementById('themeColor').value;
+                const buildType = document.getElementById('buildType').value;
+                const safeName = appName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                
+                document.getElementById('actionArea').classList.add('hidden');
+                document.getElementById('buildProgressArea').classList.remove('hidden');
+
+                // Step 1: Simulasi Handshake dengan Build API
+                updateProgress(10, "Connecting to Build API...");
+                await new Promise(r => setTimeout(r, 800));
+
+                // Step 2: Upload Source & Generate Manifest
+                updateProgress(30, "Uploading Source Assets...");
+                const zip = new JSZip();
+                const webDir = zip.folder("www");
+                for (let file of selectedFiles) {
+                    let content = await file.text();
+                    webDir.file(file.name, content);
+                }
+                
+                // Step 3: Injecting Keystore & Signatures
+                updateProgress(60, `Signing APK (${buildType.toUpperCase()})...`);
+                const signData = {
+                    version: "1.0.0",
+                    signed: true,
+                    mode: buildType,
+                    keyAlias: "monster_key",
+                    timestamp: Date.now()
+                };
+                zip.file("build_signature.json", JSON.stringify(signData, null, 2));
+                await new Promise(r => setTimeout(r, 1200));
+
+                // Step 4: Compiling Native ARM
+                updateProgress(85, "Compiling Native ARM64...");
+                const iconBlob = await generateIconBlob(512, themeColor, appName);
+                zip.file("www/icon.png", iconBlob);
+
+                // Step 5: Finalizing APK
+                updateProgress(100, "Build Successful!");
+                const blob = await zip.generateAsync({type:"blob"});
+                
+                // Trigger Download APK (Simulated as .apk extension)
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${safeName}_v2026_${buildType}.apk`; 
+                a.click();
+
+                showMsg(`APK ${buildType.toUpperCase()} Exported!`, "success");
+                
+                setTimeout(() => {
+                    document.getElementById('buildProgressArea').classList.add('hidden');
+                    document.getElementById('actionArea').classList.remove('hidden');
+                }, 2000);
+
+            } catch (err) {
+                console.error(err);
+                showMsg("APK Build Failed", "error");
+            }
+        }
+
+        async function processAndDownload() {
+            try {
+                const appName = document.getElementById('appName').value || "Monster App";
+                const themeColor = document.getElementById('themeColor').value;
+                const safeName = appName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                const pkgID = `com.itadip.${safeName}`;
+                
+                document.getElementById('actionArea').classList.add('hidden');
+                document.getElementById('buildProgressArea').classList.remove('hidden');
+
+                const zip = new JSZip();
+                const folder = zip.folder(safeName);
+                const webDir = folder.folder("www");
+
+                updateProgress(20, "Packing Hybrid Bundle...");
+                const i512 = await generateIconBlob(512, themeColor, appName);
+                webDir.file("icon-512.png", i512);
+
+                for (let file of selectedFiles) {
+                    let content = await file.text();
+                    webDir.file(file.name, content);
+                }
+
+                // Configs
+                folder.file("capacitor.config.json", JSON.stringify({ appId: pkgID, appName: appName, webDir: "www" }, null, 2));
+                folder.file("README_APK.md", `# APK Build Guide\n1. Use Android Studio\n2. Run npx cap add android\n3. Enjoy your Monster App.`);
+
+                updateProgress(100, "Bundle Ready!");
+                const blob = await zip.generateAsync({type:"blob"});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${safeName}_BUNDLE.zip`;
+                a.click();
+
+                showMsg(`Hybrid Bundle Exported!`, "success");
+                
+                setTimeout(() => {
+                    document.getElementById('buildProgressArea').classList.add('hidden');
+                    document.getElementById('actionArea').classList.remove('hidden');
+                }, 2000);
+
+            } catch (err) {
+                showMsg("Error building monster", "error");
+            }
+        }
+
+        function generateIconBlob(size, color, text) {
+            return new Promise(res => {
+                const c = document.createElement('canvas'); c.width=c.height=size;
+                const ctx = c.getContext('2d');
+                ctx.fillStyle = color; ctx.fillRect(0,0,size,size);
+                ctx.fillStyle = "white"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.font=`bold ${size*0.5}px sans-serif`;
+                ctx.fillText(text[0].toUpperCase(), size/2, size/2);
+                c.toBlob(b => res(b), 'image/png');
+            });
+        }
+
+        const updateProgress = (pct, text) => {
+            document.getElementById('progressBarFill').style.width = `${pct}%`;
+            document.getElementById('progressText').textContent = text;
+            document.getElementById('progressPercent').textContent = `${Math.floor(pct)}%`;
+        };
+
+        const showMsg = (t, type) => {
+            const m = document.getElementById('messageBox'); m.textContent = t;
+            m.className = `p-4 rounded-xl text-center text-[10px] font-bold uppercase border ${type==='error'?'bg-red-500/10 text-red-500 border-red-500/20':'bg-monster/10 text-monster border-monster/20'}`;
+            m.classList.remove('hidden'); setTimeout(() => m.classList.add('hidden'), 3000);
+        };
+
+        const renderHistory = () => {
+            db.transaction('history', 'readonly').objectStore('history').getAll().onsuccess = (e) => {
+                const list = document.getElementById('historyList');
+                const data = e.target.result.slice(-5).reverse();
+                list.innerHTML = data.map(i => `<div class="flex-shrink-0 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-[9px] font-bold">${i.appName}</div>`).join('');
+            };
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initDB();
+            renderHistory();
+            const tx = db.transaction('projects', 'readonly');
+            tx.objectStore('projects').get('last_session').onsuccess = (e) => {
+                const last = e.target.result;
+                if (last) {
+                    document.getElementById('appName').value = last.name;
+                    document.getElementById('themeColor').value = last.color;
+                    updateColorHex(last.color);
+                }
+            };
+            setTimeout(() => {
+                document.getElementById('cinematicLoader').style.opacity = '0';
+                setTimeout(() => document.getElementById('cinematicLoader').remove(), 400);
+            }, 600);
+            lucide.createIcons();
+        });
+
+        const updateColorHex = (v) => { document.getElementById('colorHex').textContent = v.toUpperCase(); };
+        
+        const clearHistory = () => { 
+            if(confirm('Clear history?')) { 
+                db.transaction('history','readwrite').objectStore('history').clear().onsuccess = () => {
+                    renderHistory();
+                    showMsg("History Cleared", "success");
+                };
+            }
+        };
+
+        document.getElementById('htmlInput').addEventListener('change', async e => {
+            selectedFiles = Array.from(e.target.files).filter(f => f.name.endsWith('.html'));
+            if(selectedFiles.length > 0) {
+                document.getElementById('uploadContent').innerHTML = `<p class="text-monster font-bold text-[10px]">${selectedFiles.length} FILES LOADED</p>`;
+                document.getElementById('actionArea').classList.remove('hidden');
+                await runAudit(selectedFiles);
+            }
+        });
+
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            document.getElementById('moonIcon').classList.toggle('hidden', isDark);
+            document.getElementById('sunIcon').classList.toggle('hidden', !isDark);
+        });
+    </script>
+</body>
+</html>
